@@ -1,0 +1,13 @@
+﻿JSON.R4P provenance
+===================
+
+Fachliche Quelle:
+- Eingefrorener Altprojekt-Commit: 259cbfac272c47ac1a7828de973512d17b29ae10
+- Urspruenglicher Pfad: Code/System/Protocols/Json
+
+Transfer in R4OS 0.64.17:
+- Source, Manifest und modulnahe Tests wurden aus dem eingefrorenen Commit
+  uebernommen.
+- Der ABI-Test bezieht die JSON-Fassade aus der gepinnten SDK-Abhaengigkeit.
+- Buildstarter, Settings und Repositoryhygiene sind neu; Parser,
+  Protokollimplementierung und ABI-Vertrag blieben unveraendert.
