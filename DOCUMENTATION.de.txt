@@ -87,10 +87,11 @@ bleiben, sichert Tests/Conformance/CheckJsonAbi.zig.
 Tests
 -----
 
-    Build.bat test
+    Windows: Build.bat test
+    Linux:   ./Build.sh test
 
 Das fertige Modul liegt standardmaessig unter
-`D:\R4OS\Artifacts\Modules\JSON\JSON.R4P`. `Settings.R4S` mappt SDK,
+`Artifacts/Modules/JSON/JSON.R4P` relativ zum Workspace-Root. `Settings.R4S` mappt SDK,
 Contract, DevKit, Zig und die Artefaktausgabe relativ oder absolut. Auch der
 ABI-Test bezieht seine Fassade aus der gepinnten SDK-Abhaengigkeit und kennt
 keinen Nachbarpfad.
