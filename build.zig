@@ -3,8 +3,8 @@ const std = @import("std");
 /// Eigenstaendiger Bau des Moduls plus die Hosttests.
 ///
 /// `zig build` erzeugt JSON.R4P allein aus diesem Verzeichnis, ohne den Rest
-/// von R4OS - so wie alle 38 R4D- und R4P-Projekte. Die Abhaengigkeit auf das
-/// SDK laeuft als Pfad in build.zig.zon.
+/// von R4OS. Die Standalone-Abhaengigkeit auf das SDK ist in build.zig.zon
+/// gepinnt; der Hoststarter bindet den ausgewaehlten Workspace-Stand ein.
 ///
 /// `zig build test` faehrt Kern- und Conformance-Tests. Die brauchen benannte
 /// Importe, weil Zig ein Root-File nicht aus seinem eigenen Baum

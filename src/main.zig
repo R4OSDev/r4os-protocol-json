@@ -37,15 +37,16 @@ pub const Request = extern struct {
 };
 
 comptime {
-    asm (r4os.r4dev.protocolEntriesAsm("json_protocol_init", "json_protocol_shutdown", "json_protocol_query", "json_protocol_dispatch"));
+    if (!@import("builtin").is_test) asm (r4os.technical2.protocolEntriesAsm("json_protocol_init", "json_protocol_shutdown", "json_protocol_query", "json_protocol_dispatch"));
 }
 
-export fn json_protocol_init(api: *const r4os.r4dev.ProtocolApi) callconv(.c) i32 {
-    var ctx = r4os.r4dev.ProtocolContext.init(api);
-    ctx.logInfo("JSON.R4P init");
-    _ = ctx.registerRole("format.json", .data, 0);
-    _ = ctx.setStatus(.active, "json protocol active");
-    return 0;
+export fn json_protocol_init(api: *const r4os.r4dev.ProtocolApi2) callconv(.c) i32 {
+    var ctx = r4os.r4dev.ProtocolContext2.init(api);
+    if (!ctx.requires(.{ "register_role", "set_status" })) return r4os.abi.err_no_fn;
+    const registered = ctx.registerRole("format.json", .data, 0);
+    if (registered != 0) return registered;
+    const result = ctx.setStatus(.active, "json protocol active");
+    return result;
 }
 
 export fn json_protocol_shutdown() callconv(.c) i32 {
@@ -66,6 +67,7 @@ export fn json_protocol_query(out: *r4os.abi.ProtocolStatus) callconv(.c) i32 {
 export fn json_protocol_dispatch(op: u32, in_buffer: *const r4os.abi.ProtocolBuffer, out_buffer: *r4os.abi.ProtocolBuffer) callconv(.c) i32 {
     const request = requestOf(in_buffer) orelse return core.err_bad_request;
     const cursor = request.cursor orelse return core.err_bad_request;
+    if (@intFromPtr(cursor) % @alignOf(core.Cursor) != 0 or @addWithOverflow(@intFromPtr(cursor), @sizeOf(core.Cursor))[1] != 0) return core.err_bad_request;
     return switch (op) {
         op_open => openDocument(cursor, request),
         op_next => core.next(cursor),
@@ -129,17 +131,19 @@ fn copyValue(cursor: *core.Cursor, out_buffer: *r4os.abi.ProtocolBuffer) i32 {
 
 fn sliceOf(ptr: ?[*]const u8, len: u32) ?[]const u8 {
     const base = ptr orelse return null;
-    return base[0..len];
+    return (r4os.binary_cursor.Span{ .address = @intFromPtr(base), .length = len }).bytes() catch null;
 }
 
 fn requestOf(buffer: *const r4os.abi.ProtocolBuffer) ?*const Request {
-    if (buffer.data == null) return null;
-    if (buffer.len < @sizeOf(Request)) return null;
-    return @ptrCast(@alignCast(buffer.data.?));
+    const native = r4os.native_protocol_view;
+    return (native.Input(Request).init(buffer, native.Policy.record(Request, .input, .prefix)) catch return null).value;
 }
 
 fn outputBytes(buffer: *const r4os.abi.ProtocolBuffer) ?[]u8 {
     if (buffer.data == null) return null;
+    if (buffer.reserved != 0 or buffer.flags != 0 or buffer.len > buffer.capacity) return null;
+    if (@addWithOverflow(@intFromPtr(buffer.data.?), buffer.capacity)[1] != 0) return null;
+    if (buffer.capacity != 0) _ = r4os.native_protocol_view.admit(buffer, r4os.native_protocol_view.Policy.record(u8, .output, .prefix), .output) catch return null;
     const ptr: [*]u8 = @ptrCast(buffer.data.?);
     return ptr[0..@intCast(buffer.capacity)];
 }
